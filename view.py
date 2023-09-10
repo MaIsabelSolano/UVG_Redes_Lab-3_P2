@@ -55,8 +55,22 @@ def functions():
     while(not stop):
         print("\n__________________________")
         print("\nIngrese el número de la opción que desea realizar: ")
-        print("\n01) Mostrar todos los contactos y su estado")
-        print("\n02) Agregar un usuario a los contactos")
+        print("\n1) Mostrar todos los contactos y su estado")
+        print("\n2) Enviar un mensaje")
+        print("\n3) Consultar tabla de enrutamiento")
+        print("\n4) SALIR")
+
+        input_ = input("No. de opción: ")
+
+        poss = [str(x + 1) for x in range(4)] # [1, 4]
+
+        if input_ in poss:
+            return int(input_)
+        
+        else: 
+            print("\n[[Opción inválida, pruebe nuevamente]]")
+        
+
 
 
 

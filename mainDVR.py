@@ -21,7 +21,7 @@ from view import *
 
 def main():
 
-    # Evita el error Exception ignored from cffi callback <function _sock_state_cb at 0x000002C1CE3BF940>:
+    # Avoids Exception ignored from cffi callback <function _sock_state_cb at 0x000002C1CE3BF940>: error
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     titulo = pyfiglet.figlet_format("DVR")
@@ -36,32 +36,32 @@ def main():
         if (option == '1'):
 
             nodoAc = get_node()
-            # if nodoAc is not None:
-            #     print(nodoAc)
+            if nodoAc is not None:
+                print(nodoAc)
 
-            #     # obtener usuario
-            #     jid = f"{nodoAc}@alumchat.xyz"
-            #     passw = "redes2023"
+                # get user from topology
+                jid = f"{nodoAc}@alumchat.xyz"
+                passw = "redes2023"
 
-            #     # conexión
-            #     client = ClientDVR(jid, passw)
-            #     client.connect(disable_starttls=True, use_ssl=False)
-            #     client.process(forever=False)
+                # connection
+                client = ClientDVR(jid, passw)
+                client.connect(disable_starttls=True, use_ssl=False)
+                client.process(forever=False)
 
 
         elif (option == '2'):
 
+            # get desired user from topology
             nodoAc = get_node()
             if nodoAc is not None:
                 print(nodoAc)
 
-            # generar usuario
+            # create user 
             jid = f"{nodoAc}@alumchat.xyz"
             passw = "redes2023"
 
             try:
-                # registrarse
-                
+                # register                
                 newUser = xmpp.JID(jid)
 
                 newUser_ = xmpp.Client(newUser.getDomain(), debug=[])
@@ -88,7 +88,7 @@ def main():
                 print("\n[[Ocurrió un error, pruebe más tarde]]\n")
 
         elif (option == '3'):
-            # salir
+            # exit
             programRunning = False
 
 

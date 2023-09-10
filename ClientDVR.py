@@ -14,36 +14,67 @@ class ClientDVR(slixmpp.ClientXMPP):
         self.message_history = {}
         self.room = None
 
-         # Obtenido de ejemplos de slixmpp
+         # Obtained from slixmpp examples
         self.register_plugin('xep_0030') # Service Discovery
         self.register_plugin('xep_0004') # Data Forms
         self.register_plugin('xep_0060') # PubSub
         self.register_plugin('xep_0199') # XMPP Ping
         self.register_plugin('xep_0045') # Group chat
 
-
         # Event handlers
         self.add_event_handler("session_start", self.start)
 
 
-        async def start(self, event):
-            print("start")
-
-            # presence
-            # self.send_presence()
-            # await self.get_roster()
-
-            asyncio.create_task(self.user_menu())
-            """Initializes de program by sending the presence, getting the roster and creating the user menu
-            """
+        # routing table
 
 
-            async def user_menu(self):
+###################################################################
+# Necesary functionality method definitions
+###################################################################
 
-                await self.get_roster()
+    async def start(self, event):
+        print("start")
 
-                print("menu")
-                # user menu
-                while(self.is_connected):
+        # presence
+        self.send_presence()
+        await self.get_roster()
 
-                    option_2 = functions()
+        asyncio.create_task(self.user_menu())
+        """Initializes de program by sending the presence, getting the roster and creating the user menu
+        """
+
+
+###################################################################
+# User methods
+###################################################################
+
+    async def user_menu(self):
+
+        await self.get_roster()
+
+        print("menu")
+        # user menu
+        while(self.is_connected):
+
+            option_2 = functions()
+
+            if option_2 == 1:
+                # Mostrar todos los contactos y su estado
+                pass 
+
+            elif option_2 == 2:
+                # Enviar mensaje
+                pass
+
+            elif option_2 == 3:
+                # Consulstar tabla de enrutamiento
+                pass 
+
+            elif option_2 == 4:
+                # Quit
+                print("Cerrando sesión...")
+                self.disconnect()
+                self.is_connected = False
+
+
+            
