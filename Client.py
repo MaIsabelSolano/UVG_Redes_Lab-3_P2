@@ -12,7 +12,9 @@ class Client(slixmpp.ClientXMPP):
         self.name = jid.split('@')[0]
         self.host = jid.split('@')[1]
         self.status = ""
-        self.status_message = ""      
+        self.status_message = ""
+
+        self.neighbors = neighbors
 
          # Obtained from slixmpp examples
         self.register_plugin('xep_0030') # Service Discovery
@@ -28,8 +30,7 @@ class Client(slixmpp.ClientXMPP):
         # routing table
         self.RT = RoutingTable()
         self.RT.addNeighbor(currentNode, 0, currentNode)
-        for n in neighbors:
-            self.RT.addNeighbor(n, 1, n)
+        
               
 
 
@@ -43,6 +44,8 @@ class Client(slixmpp.ClientXMPP):
         # presence
         self.send_presence()
         await self.get_roster()
+
+        await self.add_Neighbors()
 
         asyncio.create_task(self.user_menu())
         # while(True):
@@ -58,6 +61,14 @@ class Client(slixmpp.ClientXMPP):
     async def listen():
         print("mensaje")
         0
+
+    async def add_Neighbors(self):
+        namesFP = 'names-g4.txt'
+        with open(namesFP, 'r') as file:
+            namesJSON = json.load(file)
+            for n in self.neighbors:
+                self.RT.addNeighbor(n, 1, n)
+                self.send_presence_subscription(pto=namesJSON["config"][n])
 
 
 ###################################################################
@@ -100,6 +111,8 @@ class Client(slixmpp.ClientXMPP):
             elif option_2 == 4:
                 # Quit
                 print("Cerrando sesión...")
+                self.send_presence(pshow="unavailable", pstatus="unavailable" )
+                await asyncio.sleep(5)
                 self.disconnect()
                 self.is_connected = False
 
