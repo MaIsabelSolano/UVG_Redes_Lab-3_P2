@@ -3,7 +3,7 @@ import asyncio
 from slixmpp.xmlstream.stanzabase import ET
 from view import *
 
-class ClientDVR(slixmpp.ClientXMPP):
+class Client(slixmpp.ClientXMPP):
     def __init__(self, jid, password):
         super().__init__(jid, password)
 

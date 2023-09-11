@@ -16,7 +16,7 @@ Integrantes:
 import asyncio
 import pyfiglet
 import xmpp
-from ClientDVR import *
+from Client import *
 from view import *
 
 def main():
@@ -24,7 +24,7 @@ def main():
     # Avoids Exception ignored from cffi callback <function _sock_state_cb at 0x000002C1CE3BF940>: error
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    titulo = pyfiglet.figlet_format("DVR")
+    titulo = pyfiglet.figlet_format("Lab3 p2")
     print("\n"+titulo)  
 
 
@@ -40,16 +40,19 @@ def main():
                 print(nodoAc)
 
                 # get user from topology
-                jid = f"{nodoAc}@alumchat.xyz"
+                jid = nodoAc
                 passw = "redes2023"
 
                 # connection
-                client = ClientDVR(jid, passw)
+                client = Client(jid, passw)
                 client.connect(disable_starttls=True, use_ssl=False)
                 client.process(forever=False)
 
 
         elif (option == '2'):
+
+            print("Todas las cuentas han sido creadas...")
+            continue
 
             # get desired user from topology
             nodoAc = get_node()
@@ -57,7 +60,7 @@ def main():
                 print(nodoAc)
 
             # create user 
-            jid = f"{nodoAc}@alumchat.xyz"
+            jid = nodoAc
             passw = "redes2023"
 
             try:

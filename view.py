@@ -3,35 +3,36 @@ import json
 def get_node():
 
     nodes = []
-    filepath = 'Topologia.JSON'
+    filepath = 'names-g4.txt'
     with open(filepath, 'r') as file:
         try: 
             jsonR = json.load(file)
-            for x in jsonR:
+            for x in jsonR["config"]:
                 nodes.append(x)
+        
+            while(True):
+                print("")
+                last = 0
+                for i, node in enumerate(nodes):
+                    print(f"{i+1}) {node}")
+                    last = i
+                print(f"{last+2}) CANCELAR")
+
+                input_ = input("Seleccione el nodo actual: ")
+
+                if input_ in [ str(x + 1) for x in range(len(nodes))]:
+                    # return nodes[int(input_) - 1]
+                    return jsonR["config"][nodes[int(input_) - 1]]
+                
+                elif input_ == str(len(nodes) + 1):
+                    return None
+                
+                else: 
+                    print("\n[[Opción inválida, pruebe nuevamente]]")
 
         except:
-            print("[[Error, ocurrió un error leyendo el archivo]]")
+            print("[[Error, ocurrió un error]]")
             return None
-    
-    while(True):
-        print("")
-        last = 0
-        for i, node in enumerate(nodes):
-            print(f"{i+1}) {node}")
-            last = i
-        print(f"{last+2}) CANCELAR")
-
-        input_ = input("Seleccione el nodo actual: ")
-
-        if input_ in [ str(x + 1) for x in range(len(nodes))]:
-            return nodes[int(input_) - 1]
-        
-        elif input_ == str(len(nodes) + 1):
-            return None
-        
-        else: 
-            print("\n[[Opción inválida, pruebe nuevamente]]")
 
 
 def main_menu():
