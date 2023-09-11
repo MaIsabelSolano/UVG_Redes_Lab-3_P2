@@ -19,10 +19,10 @@ import xmpp
 from Client import *
 from view import *
 
-def main():
+# Avoids Exception ignored from cffi callback <function _sock_state_cb at 0x000002C1CE3BF940>: error
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    # Avoids Exception ignored from cffi callback <function _sock_state_cb at 0x000002C1CE3BF940>: error
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+def main():
 
     titulo = pyfiglet.figlet_format("Lab3 p2")
     print("\n"+titulo)  
@@ -99,7 +99,6 @@ def main():
             # exit
             programRunning = False
 
-
-
 if __name__ == '__main__':
     main()
+

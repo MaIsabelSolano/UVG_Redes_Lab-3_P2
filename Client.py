@@ -1,7 +1,5 @@
 import slixmpp
 import asyncio
-import time
-from slixmpp.xmlstream.stanzabase import ET
 from view import *
 from RT import *
 
@@ -12,7 +10,6 @@ class Client(slixmpp.ClientXMPP):
         self.name = jid.split('@')[0]
         self.host = jid.split('@')[1]
         self.status = ""
-        self.status_message = ""
 
         self.neighbors = neighbors
 
@@ -30,8 +27,10 @@ class Client(slixmpp.ClientXMPP):
         # routing table
         self.RT = RoutingTable()
         self.RT.addNeighbor(currentNode, 0, currentNode)
-        
-              
+
+        # messages
+        self.DMS = []
+        self.Packages = []
 
 
 ###################################################################
@@ -48,9 +47,8 @@ class Client(slixmpp.ClientXMPP):
         await self.add_Neighbors()
 
         asyncio.create_task(self.user_menu())
-        # while(True):
-        #     print("kdjf")
-        #     time.sleep(4)
+        # asyncio.create_task(self.messages())
+
         """Initializes de program by sending the presence, getting the roster and creating the user menu
         """
 
@@ -58,9 +56,19 @@ class Client(slixmpp.ClientXMPP):
         0
 
 
-    async def listen():
-        print("mensaje")
-        0
+    async def listen(self, message):
+            print(message)
+
+            message_Recieved = json.load(message)
+
+            if message_Recieved["algorithm"] == "flooding":
+                0
+
+            if message_Recieved["algorithm"] == "LST":
+                0
+
+            if message_Recieved["algorithm"] == "DVR":
+                0
 
     async def add_Neighbors(self):
         namesFP = 'names-g4.txt'
@@ -147,6 +155,3 @@ class Client(slixmpp.ClientXMPP):
         """
         Gets all the user's contacts and stores their information to display it
         """
-
-
-            
