@@ -76,7 +76,7 @@ class Client(slixmpp.ClientXMPP):
 
             if option_2 == 1:
                 # Mostrar todos los contactos y su estado
-                pass 
+                await self.contacts_status()
 
             elif option_2 == 2:
                 # Enviar mensaje
@@ -102,6 +102,38 @@ class Client(slixmpp.ClientXMPP):
                 print("Cerrando sesión...")
                 self.disconnect()
                 self.is_connected = False
+
+
+    async def contacts_status(self):
+        # listado de contactos
+        await self.get_roster()
+        conts = self.client_roster
+        contacts = [c for c in conts.keys()]
+        contactsFullInfo = []
+
+        if (len(contacts) > 0):
+            for contact in contacts:
+
+                sh = 'avaliable'
+
+                # info del contacto
+                info = conts.presence(contact)
+
+                for answ, pres in info.items():
+                    if pres['show']:
+                        sh = pres['show']
+
+                contactsFullInfo.append([contact, sh])
+
+            print_contacts(contactsFullInfo)
+                
+
+        else:
+            print("No se han encontrado contactos")
+
+        """
+        Gets all the user's contacts and stores their information to display it
+        """
 
 
             

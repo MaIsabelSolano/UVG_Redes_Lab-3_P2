@@ -1,4 +1,5 @@
 import json 
+from prettytable import PrettyTable
 
 def get_node():
 
@@ -71,6 +72,19 @@ def functions():
         else: 
             print("\n[[Opción inválida, pruebe nuevamente]]")
 
+def print_contacts(contacts):
+    """
+    Given a list of contacts, this function creates a table to display them
+
+    Args:
+        contacts (str): contact list
+    """
+    x = PrettyTable()
+    x.field_names = ["Contacto", "Estado"]
+    for c in contacts:
+        x.add_row([c[0], c[1]])
+
+    print(x)
 
 def choose_algorithm():
 
