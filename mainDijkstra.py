@@ -18,6 +18,42 @@ import sys
 from queue import PriorityQueue
 import slixmpp
 
+class ClientLinkState:
+    def register_account(self, address):
+        xmpp = slixmpp.ClientXMPP(address, 'password')
+        xmpp.register_plugin('xep_0030')  # Service Discovery
+        xmpp.register_plugin('xep_0004')  # Data Forms
+        xmpp.register_plugin('xep_0066')  # Out-of-band Data
+        xmpp.register_plugin('xep_0077')  # In-band Registration
+        xmpp['xep_0077'].force_registration = True
+
+        if xmpp.connect():
+            xmpp.process(block=True)
+            print("Cuenta registrada exitosamente.")
+        else:
+            print("No se pudo conectar al servidor XMPP.")
+
+    def login(self, address):
+        xmpp = slixmpp.ClientXMPP(address, 'password')
+        xmpp.register_plugin('xep_0030')  # Service Discovery
+        xmpp.register_plugin('xep_0199')  # XMPP Ping
+
+        if xmpp.connect():
+            xmpp.process(block=False)
+            print("Inicio de sesión exitoso.")
+        else:
+            print("No se pudo conectar al servidor XMPP.")
+    
+    def send_message(self, destination):
+        print("Prueba")
+
+    def listen_message(self):
+        print("Prueba")
+
+    def message_handler(self, message):
+        print(f"Mensaje recibido de {message['from']}: {message['body']}")
+
+
 class Node:
     def __init__(self, name, address):
         self.name = name
@@ -60,7 +96,8 @@ class Graph:
 
         return D[end]
 
-    def main_menu():
+    def main_menu(self):
+        cliente = ClientLinkState()
         while True:
             print("Menú principal:")
             print("1. Iniciar sesión")
@@ -70,16 +107,19 @@ class Graph:
             option = input("Seleccione una opción: ")
 
             if option == "1":
-                print("Iniciar sesión")
+                address = input("Ingrese su dirección XMPP: ")
+                cliente.login(address)
+                self.login_menu()
             elif option == "2":
-                 print("Registrar")
+                address = input("Ingrese su dirección XMPP: ")
+                cliente.register_account(address)
             elif option == "3":
                 print("¡Hasta luego!")
                 break
             else:
                 print("Opción inválida. Por favor, seleccione una opción válida.")
 
-    def login_menu():
+    def login_menu(self):
         while True:
             print("Menú de inicio de sesión:")
             print("1. Enviar mensaje")
@@ -116,8 +156,7 @@ def main():
         for neighbor in neighbors:
             g.add_edge(name, neighbor)
 
-    print(g.dijkstra('A', 'D'))
-    g.print_addresses()
+    g.main_menu()
 
 if __name__ == "__main__":
     main()
