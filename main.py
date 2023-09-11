@@ -35,16 +35,21 @@ def main():
 
         if (option == '1'):
 
-            nodoAc = get_node()
+            nodoAc, jid = get_node()
             if nodoAc is not None:
                 print(nodoAc)
 
-                # get user from topology
-                jid = nodoAc
+                # get neighours
+                neighbors = []
+                with open('topo-g4.txt', 'r') as file:
+                    topology = json.load(file)
+                    neighbors = topology["config"][nodoAc]
+
+                # default password
                 passw = "redes2023"
 
                 # connection
-                client = Client(jid, passw)
+                client = Client(jid, passw, neighbors, nodoAc)
                 client.connect(disable_starttls=True, use_ssl=False)
                 client.process(forever=False)
 
@@ -55,12 +60,12 @@ def main():
             continue
 
             # get desired user from topology
-            nodoAc = get_node()
+            nodoAc, jid = get_node()
             if nodoAc is not None:
                 print(nodoAc)
 
             # create user 
-            jid = nodoAc
+            # jid = nodoAc
             passw = "redes2023"
 
             try:

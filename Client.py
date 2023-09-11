@@ -1,18 +1,18 @@
 import slixmpp
 import asyncio
+import time
 from slixmpp.xmlstream.stanzabase import ET
 from view import *
+from RT import *
 
 class Client(slixmpp.ClientXMPP):
-    def __init__(self, jid, password):
+    def __init__(self, jid, password, neighbors, currentNode):
         super().__init__(jid, password)
 
         self.name = jid.split('@')[0]
         self.host = jid.split('@')[1]
         self.status = ""
-        self.status_message = ""
-        self.message_history = {}
-        self.room = None
+        self.status_message = ""      
 
          # Obtained from slixmpp examples
         self.register_plugin('xep_0030') # Service Discovery
@@ -23,9 +23,14 @@ class Client(slixmpp.ClientXMPP):
 
         # Event handlers
         self.add_event_handler("session_start", self.start)
-
+        self.add_event_handler("message", self.listen)
 
         # routing table
+        self.RT = RoutingTable()
+        self.RT.addNeighbor(currentNode, 0, currentNode)
+        for n in neighbors:
+            self.RT.addNeighbor(n, 1, n)
+              
 
 
 ###################################################################
@@ -40,8 +45,19 @@ class Client(slixmpp.ClientXMPP):
         await self.get_roster()
 
         asyncio.create_task(self.user_menu())
+        # while(True):
+        #     print("kdjf")
+        #     time.sleep(4)
         """Initializes de program by sending the presence, getting the roster and creating the user menu
         """
+
+    async def createJSON():
+        0
+
+
+    async def listen():
+        print("mensaje")
+        0
 
 
 ###################################################################
@@ -64,11 +80,22 @@ class Client(slixmpp.ClientXMPP):
 
             elif option_2 == 2:
                 # Enviar mensaje
-                pass
+                algorithm = choose_algorithm()
+                if (algorithm == 1):
+                    print("Flooding")
+                    # TODO
+
+                elif (algorithm == 2):
+                    print("Link State routing")
+                    # TODO
+
+                elif (algorithm == 3):
+                    print("Distance vector routing")
+                    # TODO
 
             elif option_2 == 3:
                 # Consulstar tabla de enrutamiento
-                pass 
+                print(self.RT)
 
             elif option_2 == 4:
                 # Quit

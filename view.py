@@ -22,7 +22,7 @@ def get_node():
 
                 if input_ in [ str(x + 1) for x in range(len(nodes))]:
                     # return nodes[int(input_) - 1]
-                    return jsonR["config"][nodes[int(input_) - 1]]
+                    return nodes[int(input_) - 1], jsonR["config"][nodes[int(input_) - 1]]
                 
                 elif input_ == str(len(nodes) + 1):
                     return None
@@ -70,6 +70,26 @@ def functions():
         
         else: 
             print("\n[[Opción inválida, pruebe nuevamente]]")
+
+
+def choose_algorithm():
+
+    while(True):
+        print("\nEscoja el algoritmo a utilizar")
+        print("1) Flooding")
+        print("2) Link State Routing")
+        print("3) Distance vector routing")
+        print("4) CANCELAR")
+        
+        input_ = input("\nNo. del algoritmo: ")
+
+        ops = [str(x) for x in range(1, 5)]
+
+        if input_ not in ops:
+            print("\n[[Opción inválida, pruebe nuevamente]]")
+
+        else:
+            return int(input_)
         
 
 
