@@ -136,10 +136,25 @@ def message_Info(nodo_actual, nodes_list, rt:RoutingTable):
                 
             return (node, payload, hop)
 
-        
+def create_message():
+    while(True):
+        print("\nIngrese los datos que se le piden a continuación")
+        node = input("Nodo destino: ")
+        payload = input("Mensaje: ")
 
+        if (payload is None) or (node is None):
+            return None
 
+        dest = ""
+        try: 
+            # get direction
+            with open('names-g4.txt', 'r') as file:
+                jsonNames = json.load(file)
+                dest = jsonNames["config"][node]
 
-
-
+        except:
+            print(f"[[Error al leer el archivo]]")
+            print("Pruebe nuevamente")
+            
+        return (node, payload, dest)
 
