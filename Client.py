@@ -58,14 +58,11 @@ class Client(slixmpp.ClientXMPP):
 
 
     async def listen(self, message):
-        await self.get_roster()
-        print("listen!!!")
-        
+        await self.get_roster()        
         if message['type'] in ('chat', 'normal'):
-            print("mensaje\n", message["body"])
             try:
                 message_Recieved = json.loads(message["body"])
-                print("alg: ", message_Recieved["headers"]["algorithm"])
+                print(message_Recieved)
 
                 if message_Recieved["headers"]["algorithm"] == "flooding":
                     0
@@ -92,7 +89,6 @@ class Client(slixmpp.ClientXMPP):
         # get info for messge
         nodos = [n[0] for n in self.RT.TABLE]
         res = message_Info(self.currentNode, nodos, self.RT)
-        print("res ", res)
 
         # Generate json
         if res is not None: 
