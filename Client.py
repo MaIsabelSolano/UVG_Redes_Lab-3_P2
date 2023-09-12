@@ -2,6 +2,7 @@ import slixmpp
 import asyncio
 from view import *
 from RT import *
+from LinkStateRouting import *
 
 class Client(slixmpp.ClientXMPP):
     def __init__(self, jid, password, neighbors, currentNode):
@@ -9,6 +10,22 @@ class Client(slixmpp.ClientXMPP):
 
         self.name = jid.split('@')[0]
         self.host = jid.split('@')[1]
+        self.graph = Graph()
+        # Cargar la topología de la red
+        with open('./topo-g4.txt') as f:
+            topology = json.load(f)
+        # Cargar las direcciones de XMPP de cada nodo
+        with open('./names-g4.txt') as f:
+            addresses = json.load(f)
+
+        for name in topology['config']:
+            self.graph.add_node(name, addresses['config'][name])
+
+        for name, neighbors in topology['config'].items():
+            for neighbor in neighbors:
+                self.graph.add_edge(name, neighbor)
+                
+            
         self.status = ""
 
         self.neighbors = neighbors
@@ -68,7 +85,7 @@ class Client(slixmpp.ClientXMPP):
                     0
 
                 if message_Recieved["headers"]["algorithm"] == "LST":
-                    0
+                    print("LST")
 
                 if message_Recieved["headers"]["algorithm"] == "DVR":
                     print("DVR")
@@ -113,6 +130,37 @@ class Client(slixmpp.ClientXMPP):
             self.send_message(mto=res[2], 
                           mbody=jsonEnv, 
                           mtype='chat')
+    
+    async def LSRMessages(self):
+        await self.get_roster()
+
+        # get info for messge
+        nodos = [n[0] for n in self.RT.TABLE]
+        res = message_Info(self.currentNode, nodos, self.RT)
+
+        # Generate json
+        if res is not None: 
+            headers = {
+                "from": self.currentNode,
+                "to": res[0], 
+                "hop": self.RT.get_info(res[0])[1],
+                "algorithm": "Link State Routing"
+            }
+
+            message = {
+                "type": "info",
+                "headers": headers,
+                "payload": res[1]
+            }
+
+            print("")
+            jsonEnv = json.dumps(message, indent=4)
+            print(jsonEnv)
+
+            # Send message
+            self.send_message(mto=res[2], 
+                          mbody=jsonEnv, 
+                          mtype='chat')
 
 
 ###################################################################
@@ -143,8 +191,8 @@ class Client(slixmpp.ClientXMPP):
 
                 elif (algorithm == 2):
                     print("Link State routing")
+                    await self.LSRMessages()
                     # TODO
-
                 elif (algorithm == 3):
                     print("Distance vector routing")
                     await self.DVRmessage()

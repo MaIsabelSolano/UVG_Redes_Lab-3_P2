@@ -1,0 +1,9 @@
+{   
+    "type":"names", 
+    "config":
+    {
+        "A": "G4_A@alumchat.xyz", 
+        "B": "G4_B@alumchat.xyz", 
+        "C": "G4_C@alumchat.xyz" 
+    } 
+}
