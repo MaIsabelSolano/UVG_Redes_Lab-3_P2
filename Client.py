@@ -109,13 +109,15 @@ class Client(slixmpp.ClientXMPP):
                                 with open('names-g4.txt', 'r') as file:
                                     namesJSON = json.load(file)
 
-                                    to_dir = namesJSON["config"][to_]
-
+                                    # from routing table get where to hop
+                                    hop = self.RT.get_info(to_)[1]
+                                    hop_dir = namesJSON["config"][hop]
+    
                                     jsonEnv = json.dumps(message_Recieved, indent=4)
-                                    print("reenvio\n", jsonEnv)
+                                    print(f"reenvio por {hop_dir}\n", jsonEnv)
 
                                     # Send message
-                                    self.send_message(mto=to_dir, 
+                                    self.send_message(mto=hop_dir, 
                                                     mbody=jsonEnv, 
                                                     mtype='chat')
 
