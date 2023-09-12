@@ -1,4 +1,5 @@
 import slixmpp
+from slixmpp import Presence
 import asyncio
 from view import *
 from RT import *
@@ -14,6 +15,10 @@ class Client(slixmpp.ClientXMPP):
         self.neighbors = neighbors
         self.currentNode = currentNode
 
+        # routing table
+        self.RT = RoutingTable()
+        self.RT.addNeighbor(currentNode, 0, currentNode)
+
          # Obtained from slixmpp examples
         self.register_plugin('xep_0030') # Service Discovery
         self.register_plugin('xep_0004') # Data Forms
@@ -23,15 +28,9 @@ class Client(slixmpp.ClientXMPP):
 
         # Event handlers
         self.add_event_handler("session_start", self.start)
+        self.add_event_handler('presence', self.presence_handler)
+        self.add_event_handler("subscribe", self.handle_subscription)
         self.add_event_handler("message", self.listen)
-
-        # routing table
-        self.RT = RoutingTable()
-        self.RT.addNeighbor(currentNode, 0, currentNode)
-
-        # messages
-        self.DMS = []
-        self.Packages = []
 
 
 ###################################################################
@@ -42,10 +41,14 @@ class Client(slixmpp.ClientXMPP):
         print("start")
 
         # presence
-        self.send_presence()
+        self.send_presence(pshow="available")
         await self.get_roster()
+        print("status: ", self.status)
 
         await self.add_Neighbors()
+
+        # share initial routing table to connected 
+        await self.shareRT()
 
         asyncio.create_task(self.user_menu())
         # asyncio.create_task(self.messages())
@@ -53,9 +56,26 @@ class Client(slixmpp.ClientXMPP):
         """Initializes de program by sending the presence, getting the roster and creating the user menu
         """
 
-    async def createJSON():
-        0
+    async def presence_handler(self, presence):
 
+        if presence['type'] == 'subscribe':
+            try:
+                self.send_presence_subscription(pto=presence['from'], ptype='subscribe')
+                await self.get_roster()
+            except:
+                print("Hubo un error en el presence handler")
+
+        """
+        Handles how the presence is dealt with. It sends the currente presence to the accounts the user is subscribed to
+        """
+
+    async def handle_subscription(self, presence):
+        if presence["type"] == "subscribe":
+            self.send_presence(pto=presence["from"], ptype=["subscribed"])
+
+        """
+        Handles subscriptions requests
+        """
 
     async def listen(self, message):
         await self.get_roster()        
@@ -74,7 +94,7 @@ class Client(slixmpp.ClientXMPP):
                     print("DVR")
                     if message_Recieved["type"] == "message":
                         if message_Recieved["headers"]["to"] == self.currentNode:
-                            # De message has reached it's intended node
+                            # The message has reached it's intended node
                             from_ = message_Recieved["headers"]["from"]
                             payload = message_Recieved["payload"]
                             print("\n=======================================")
@@ -82,12 +102,53 @@ class Client(slixmpp.ClientXMPP):
                             print("=======================================\n")
 
                         else:
-                            0
+                            # Re-semd
+                            to_ = message_Recieved["headers"]["to"]
+                            if self.RT.contains(to_):
+                                # find the direction
+                                with open('names-g4.txt', 'r') as file:
+                                    namesJSON = json.load(file)
+
+                                    to_dir = namesJSON["config"][to_]
+
+                                    jsonEnv = json.dumps(message_Recieved, indent=4)
+                                    print("reenvio\n", jsonEnv)
+
+                                    # Send message
+                                    self.send_message(mto=to_dir, 
+                                                    mbody=jsonEnv, 
+                                                    mtype='chat')
 
                     if message_Recieved["type"] == "info":
-                        0
+                        print("info!!!")
+                        # Got a routing table
+                        currentRT = self.RT.TABLE # used to compare later
 
-                    
+                        from_ = message_Recieved["headers"]["from"]
+                        rt = message_Recieved["payload"]
+
+                        for i in range(len(rt)):
+                            if (self.RT.contains(rt[i][0])):
+                                # update si es menor
+                                wAcc = self.RT.get_info(rt[i][0])[0]
+                                weight = self.RT.get_info(from_)[0] + rt[i][1]
+                                # print(f"{weight} < {wAcc}? {self.actual_node}, {rt[i][0]}, {from_} ")
+
+                                if weight < wAcc:
+                                    # Actualizar si es menor
+                                    self.RT.update_info(rt[i][0], weight, from_)
+                                    # print("actualiza", rt[i][0], weight, from_)
+
+                            else:
+                                # agregar
+                                weight = self.RT.get_info(from_)[0] + rt[i][1]
+                                self.RT.addNeighbor(rt[i][0], weight, from_)
+
+                        # share routing table only if it changed
+                        if currentRT != self.RT.TABLE:
+                            await self.shareRT()
+
+
             except:
                 print("[[Se produjo un error]]")
 
@@ -111,7 +172,7 @@ class Client(slixmpp.ClientXMPP):
             headers = {
                 "from": self.currentNode,
                 "to": res[0], 
-                "hop": self.RT.get_info(res[0])[1],
+                "hop": " ", # self.RT.get_info(res[0])[1],
                 "algorithm": "DVR"
             }
 
@@ -129,7 +190,53 @@ class Client(slixmpp.ClientXMPP):
             self.send_message(mto=res[2], 
                           mbody=jsonEnv, 
                           mtype='chat')
+            
 
+    async def shareRT(self):
+        print("Sharing Routing Table")
+        await self.get_roster()
+        
+        connectedNeighbors = []
+        try:
+            with open('names-g4.txt', 'r') as file:
+                namesJson = json.load(file)
+                for n in self.neighbors:
+                    # get direction
+                    nDir = namesJson["config"][n]
+
+                    # check connection
+                    # TODO at the moment it is not handling presence
+                    connectedNeighbors.append((n, nDir))
+
+            print("cn: ", connectedNeighbors)
+
+            payload = self.RT.TABLE
+
+            for n, nDir in connectedNeighbors:
+                headers = {
+                    "from": self.currentNode,
+                    "to": n, 
+                    "algorithm": "DVR"                    
+                }
+
+                message = {
+                    "type": "info",
+                    "headers": headers,
+                    "payload": payload
+                }
+
+                jsonRes = json.dumps(message, indent=4)
+                print(jsonRes)
+
+                # Send message
+                self.send_message(mto=nDir, 
+                            mbody=jsonRes, 
+                            mtype='chat')
+                
+        except:
+            print("[[Error: Ocurrió un problema]]")
+
+            
 
 ###################################################################
 # User methods
@@ -188,7 +295,8 @@ class Client(slixmpp.ClientXMPP):
         if (len(contacts) > 0):
             for contact in contacts:
 
-                sh = 'avaliable'
+                sh = ''
+                st = ''
 
                 # info del contacto
                 info = conts.presence(contact)
@@ -196,6 +304,8 @@ class Client(slixmpp.ClientXMPP):
                 for answ, pres in info.items():
                     if pres['show']:
                         sh = pres['show']
+                    if pres['status']:
+                        st = pres['status']
 
                 contactsFullInfo.append([contact, sh])
 
