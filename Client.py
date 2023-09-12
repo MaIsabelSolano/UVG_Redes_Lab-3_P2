@@ -72,6 +72,22 @@ class Client(slixmpp.ClientXMPP):
 
                 if message_Recieved["headers"]["algorithm"] == "DVR":
                     print("DVR")
+                    if message_Recieved["type"] == "message":
+                        if message_Recieved["headers"]["to"] == self.currentNode:
+                            # De message has reached it's intended node
+                            from_ = message_Recieved["headers"]["from"]
+                            payload = message_Recieved["payload"]
+                            print("\n=======================================")
+                            print(f"Nuevo mensaje de {from_}!\n{payload}")
+                            print("=======================================\n")
+
+                        else:
+                            0
+
+                    if message_Recieved["type"] == "info":
+                        0
+
+                    
             except:
                 print("[[Se produjo un error]]")
 
