@@ -34,9 +34,9 @@ def main():
         option = main_menu()
 
         if (option == '1'):
-
-            nodoAc, jid = get_node()
-            if nodoAc is not None:
+            res = get_node()
+            if res is not None:
+                nodoAc, jid = res
                 print(nodoAc)
 
                 # get neighours

@@ -1,5 +1,6 @@
 import json 
 from prettytable import PrettyTable
+from RT import *
 
 def get_node():
 
@@ -104,6 +105,37 @@ def choose_algorithm():
 
         else:
             return int(input_)
+        
+
+def message_Info(nodo_actual, nodes_list, rt:RoutingTable):
+
+    while(True):
+
+        print("\nIngrese los datos que se le piden a continuación")
+        node = input("Nodo: ")
+        payload = input("Mensaje: ")
+
+        if (payload is None) or (node is None):
+            return None
+
+        if (node not in nodes_list):
+            print(f"[[Error: {nodo_actual} no tiene relación con {node}]]")
+            print("Pruebe nuevamente")
+
+        else:
+            hop = ""
+            try: 
+                # get direction
+                with open('names-g4.txt', 'r') as file:
+                    jsonNames = json.load(file)
+                    hop = jsonNames["config"][rt.get_info(node)[1]] # where to hop
+
+            except:
+                print(f"[[Error al leer el archivo]]")
+                print("Pruebe nuevamente")
+                
+            return (node, payload, hop)
+
         
 
 

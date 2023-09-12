@@ -12,6 +12,7 @@ class Client(slixmpp.ClientXMPP):
         self.status = ""
 
         self.neighbors = neighbors
+        self.currentNode = currentNode
 
          # Obtained from slixmpp examples
         self.register_plugin('xep_0030') # Service Discovery
@@ -57,18 +58,25 @@ class Client(slixmpp.ClientXMPP):
 
 
     async def listen(self, message):
-            print(message)
+        await self.get_roster()
+        print("listen!!!")
+        
+        if message['type'] in ('chat', 'normal'):
+            print("mensaje\n", message["body"])
+            try:
+                message_Recieved = json.loads(message["body"])
+                print("alg: ", message_Recieved["headers"]["algorithm"])
 
-            message_Recieved = json.load(message)
+                if message_Recieved["headers"]["algorithm"] == "flooding":
+                    0
 
-            if message_Recieved["algorithm"] == "flooding":
-                0
+                if message_Recieved["headers"]["algorithm"] == "LST":
+                    0
 
-            if message_Recieved["algorithm"] == "LST":
-                0
-
-            if message_Recieved["algorithm"] == "DVR":
-                0
+                if message_Recieved["headers"]["algorithm"] == "DVR":
+                    print("DVR")
+            except:
+                print("[[Se produjo un error]]")
 
     async def add_Neighbors(self):
         namesFP = 'names-g4.txt'
@@ -77,6 +85,38 @@ class Client(slixmpp.ClientXMPP):
             for n in self.neighbors:
                 self.RT.addNeighbor(n, 1, n)
                 self.send_presence_subscription(pto=namesJSON["config"][n])
+
+    async def DVRmessage(self):
+        await self.get_roster()
+
+        # get info for messge
+        nodos = [n[0] for n in self.RT.TABLE]
+        res = message_Info(self.currentNode, nodos, self.RT)
+        print("res ", res)
+
+        # Generate json
+        if res is not None: 
+            headers = {
+                "from": self.currentNode,
+                "to": res[0], 
+                "hop": self.RT.get_info(res[0])[1],
+                "algorithm": "DVR"
+            }
+
+            message = {
+                "type": "message",
+                "headers": headers,
+                "payload": res[1]
+            }
+
+            print("")
+            jsonEnv = json.dumps(message, indent=4)
+            print(jsonEnv)
+
+            # Send message
+            self.send_message(mto=res[2], 
+                          mbody=jsonEnv, 
+                          mtype='chat')
 
 
 ###################################################################
@@ -90,6 +130,7 @@ class Client(slixmpp.ClientXMPP):
         print("menu")
         # user menu
         while(self.is_connected):
+            await self.get_roster()
 
             option_2 = functions()
 
@@ -110,7 +151,7 @@ class Client(slixmpp.ClientXMPP):
 
                 elif (algorithm == 3):
                     print("Distance vector routing")
-                    # TODO
+                    await self.DVRmessage()
 
             elif option_2 == 3:
                 # Consulstar tabla de enrutamiento
