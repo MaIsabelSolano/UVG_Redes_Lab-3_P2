@@ -1,4 +1,5 @@
 import slixmpp
+from slixmpp import Presence
 import asyncio
 from view import *
 from RT import *
@@ -31,6 +32,11 @@ class Client(slixmpp.ClientXMPP):
         self.neighbors = neighbors
         self.currentNode = currentNode
 
+        # routing table
+        self.RT = RoutingTable()
+        self.RT.addNeighbor(currentNode, 0, currentNode)
+
+        # Obtained from slixmpp examples
         # Obtained from slixmpp examples
         self.register_plugin('xep_0030') # Service Discovery
         self.register_plugin('xep_0004') # Data Forms
@@ -47,6 +53,7 @@ class Client(slixmpp.ClientXMPP):
         # routing table
         self.RT = RoutingTable()
         self.RT.addNeighbor(currentNode, 0, currentNode)
+
         #New rt LSR
         self.newRT = RoutingTable()
         self.newRT.addNeighbor(currentNode, 0, currentNode)
@@ -62,9 +69,21 @@ class Client(slixmpp.ClientXMPP):
         # presence
         self.send_presence(pshow="available")
         await self.get_roster()
-        print("status: ", self.status)
+        # print("status: ", self.status)
 
         await self.add_Neighbors()
+
+        # generate matrix
+        self.matrix = [[999 for __ in range(9)] for _ in range(9)]
+        self.positions = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5, "G": 6, "H": 7, "I": 8}
+        self.positionsR = ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
+
+        # Update matrix accordin to routing table
+        for n in self.RT.TABLE:
+            self.matrix[self.positions[self.currentNode]][self.positions[n[0]]] = n[1]
+
+        # for _ in self.matrix:
+        #     print(_)
 
         # share initial routing table to connected 
         await self.shareRT()
@@ -102,7 +121,7 @@ class Client(slixmpp.ClientXMPP):
         if message['type'] in ('chat', 'normal'):
             try:
                 message_Recieved = json.loads(message["body"])
-                print(message_Recieved)
+                # print(message_Recieved)
 
                 if message_Recieved["headers"]["algorithm"] == "flooding":
                     0
@@ -137,7 +156,7 @@ class Client(slixmpp.ClientXMPP):
                                                     mbody=jsonEnv, 
                                                     mtype='chat')
                     if message_Recieved["type"] == "info":
-                        print("info!!!")
+                        # print("info!!!")
                         # Got a routing table
                         currentRT = self.RT.TABLE # used to compare later
 
@@ -177,7 +196,7 @@ class Client(slixmpp.ClientXMPP):
                             print("=======================================\n")
 
                         else:
-                            # Re-semd
+                            # Re-send
                             to_ = message_Recieved["headers"]["to"]
                             if self.RT.contains(to_):
                                 # find the direction
@@ -197,33 +216,79 @@ class Client(slixmpp.ClientXMPP):
                                                     mtype='chat')
 
                     if message_Recieved["type"] == "info":
-                        print("info!!!")
-                        # Got a routing table
-                        currentRT = self.RT.TABLE # used to compare later
+                        # print("info!!!")
+                        # Got a routing tabl
+
+                        currentmat = [] # create copy to compare later
+                        for n in self.matrix:
+                            temp = []
+                            for w in n:
+                                temp.append(w)
+                            currentmat.append(temp)
 
                         from_ = message_Recieved["headers"]["from"]
-                        rt = message_Recieved["payload"]
+                        mat = message_Recieved["payload"]
 
-                        for i in range(len(rt)):
-                            if (self.RT.contains(rt[i][0])):
-                                # update si es menor
-                                wAcc = self.RT.get_info(rt[i][0])[0]
-                                weight = self.RT.get_info(from_)[0] + rt[i][1]
-                                # print(f"{weight} < {wAcc}? {self.actual_node}, {rt[i][0]}, {from_} ")
+                        # update whole matrix
+                        for x in range(len(mat)):
+                            for y in range(len(mat[x])):
+                                if self.matrix[x][y] > mat[x][y]:
+                                    # update weight
+                                    self.matrix[x][y] = mat[x][y]
 
-                                if weight < wAcc:
-                                    # Actualizar si es menor
-                                    self.RT.update_info(rt[i][0], weight, from_)
-                                    # print("actualiza", rt[i][0], weight, from_)
+                        # gen recievend routing table
+                        list_ = mat[self.positions[from_]]
+                        # print(list_)
+                        for i in range(len(list_)):
+                            if list_[i] != 999:
 
-                            else:
-                                # agregar
-                                weight = self.RT.get_info(from_)[0] + rt[i][1]
-                                self.RT.addNeighbor(rt[i][0], weight, from_)
+                                if self.RT.contains(self.positionsR[i]):
+                                    # update
+                                    wAcc = self.RT.get_info(self.positionsR[i])[0]
+                                    weight = self.RT.get_info(from_)[0] + list_[i]
+                                    # print(f"{weight} < {wAcc}? {self.actual_node}, {rt[i][0]}, {from_} ")
+
+                                    if weight < wAcc:
+                                        # Actualizar si es menor
+                                        self.RT.update_info(self.positionsR[i], weight, from_)
+                                        # print("actualiza", rt[i][0], weight, from_)
+
+                                else: 
+                                    # add
+                                    weight = self.RT.get_info(from_)[0] + list_[i]
+                                    self.RT.addNeighbor(self.positionsR[i], weight, from_)
+
+
+                        #update matrix
+                        for n in self.RT.TABLE:
+                            self.matrix[self.positions[self.currentNode]][self.positions[n[0]]] = n[1]
+
+
+                        # for i in range(len(rt)):
+                        #     if (self.RT.contains(rt[i][0])):
+                        #         # update si es menor
+                        #         wAcc = self.RT.get_info(rt[i][0])[0]
+                        #         weight = self.RT.get_info(from_)[0] + rt[i][1]
+                        #         # print(f"{weight} < {wAcc}? {self.actual_node}, {rt[i][0]}, {from_} ")
+
+                        #         if weight < wAcc:
+                        #             # Actualizar si es menor
+                        #             self.RT.update_info(rt[i][0], weight, from_)
+                        #             # print("actualiza", rt[i][0], weight, from_)
+
+                        #     else:
+                        #         # agregar
+                        #         weight = self.RT.get_info(from_)[0] + rt[i][1]
+                        #         self.RT.addNeighbor(rt[i][0], weight, from_)
 
                         # share routing table only if it changed
-                        if currentRT != self.RT.TABLE:
-                            await self.shareRT()
+                        # print(currentmat)
+                        # print()
+                        # print(self.matrix)
+                        # if currentmat != self.matrix:
+                        #     await self.shareRT()
+
+                        await self.shareRT()
 
 
             except:
@@ -259,9 +324,9 @@ class Client(slixmpp.ClientXMPP):
                 "payload": res[1]
             }
 
-            print("")
+            # print("")
             jsonEnv = json.dumps(message, indent=4)
-            print(jsonEnv)
+            # print(jsonEnv)
 
             # Send message
             self.send_message(mto=res[2], 
@@ -301,7 +366,7 @@ class Client(slixmpp.ClientXMPP):
             
 
     async def shareRT(self):
-        print("Sharing Routing Table")
+        # print("Sharing Routing Table")
         
         
         await self.get_roster()
@@ -318,7 +383,7 @@ class Client(slixmpp.ClientXMPP):
                     # TODO at the moment it is not handling presence
                     connectedNeighbors.append((n, nDir))
 
-            print("cn: ", connectedNeighbors)
+            # print("cn: ", connectedNeighbors)
 
             payload = self.RT.TABLE
 
@@ -336,7 +401,7 @@ class Client(slixmpp.ClientXMPP):
                 }
 
                 jsonRes = json.dumps(message, indent=4)
-                print(jsonRes)
+                # print(jsonRes)
 
                 # Send message
                 self.send_message(mto=nDir, 
@@ -347,7 +412,7 @@ class Client(slixmpp.ClientXMPP):
             print("[[Error: Ocurrió un problema]]")
             
     async def shareRT_LST(self):
-        print("Sharing Routing Table")
+        # print("Sharing Routing Table")
         await self.get_roster()
         
         #Realizamos dijkstra para obtener el camino más corto
@@ -385,7 +450,7 @@ class Client(slixmpp.ClientXMPP):
                     # TODO at the moment it is not handling presence
                     connectedNeighbors.append((n, nDir))
 
-            print("cn: ", connectedNeighbors)
+            # print("cn: ", connectedNeighbors)
 
             payload = self.newRT.TABLE
 
@@ -403,7 +468,53 @@ class Client(slixmpp.ClientXMPP):
                 }
 
                 jsonRes = json.dumps(message, indent=4)
-                print(jsonRes)
+                # print(jsonRes)
+
+                # Send message
+                self.send_message(mto=nDir, 
+                            mbody=jsonRes, 
+                            mtype='chat')
+                
+        except:
+            print("[[Error: Ocurrió un problema]]")
+
+            
+
+    async def shareRT(self):
+        # print("Sharing Routing Table")
+        await self.get_roster()
+        
+        connectedNeighbors = []
+        try:
+            with open('names-g4.txt', 'r') as file:
+                namesJson = json.load(file)
+                for n in self.neighbors:
+                    # get direction
+                    nDir = namesJson["config"][n]
+
+                    # check connection
+                    # TODO at the moment it is not handling presence
+                    connectedNeighbors.append((n, nDir))
+
+            # print("cn: ", connectedNeighbors)
+
+            payload = self.matrix
+
+            for n, nDir in connectedNeighbors:
+                headers = {
+                    "from": self.currentNode,
+                    "to": n, 
+                    "algorithm": "DVR"                    
+                }
+
+                message = {
+                    "type": "info",
+                    "headers": headers,
+                    "payload": payload
+                }
+
+                jsonRes = json.dumps(message, indent=4)
+                # print(jsonRes)
 
                 # Send message
                 self.send_message(mto=nDir, 
@@ -423,7 +534,7 @@ class Client(slixmpp.ClientXMPP):
 
         await self.get_roster()
 
-        print("menu")
+        # print("menu")
         # user menu
         while(self.is_connected):
             await self.get_roster()
@@ -453,11 +564,14 @@ class Client(slixmpp.ClientXMPP):
                 # Consulstar tabla de enrutamiento
                 print(self.RT)
 
+                for m in self.matrix:
+                    print(m)
+
             elif option_2 == 4:
                 # Quit
                 print("Cerrando sesión...")
                 self.send_presence(pshow="unavailable", pstatus="unavailable" )
-                await asyncio.sleep(5)
+                # await asyncio.sleep(5)
                 self.disconnect()
                 self.is_connected = False
 
