@@ -4,7 +4,7 @@ import asyncio
 from extras import Node
 from view import *
 from RT import *
-from LinkStateRouting import *
+from LinkStateRouting import * 
 
 class Client(slixmpp.ClientXMPP):
     def __init__(self, jid, password, neighborslist, currentNode):
