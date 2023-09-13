@@ -1,6 +1,7 @@
 import slixmpp
 from slixmpp import Presence
 import asyncio
+from extras import Node
 from view import *
 from RT import *
 from LinkStateRouting import *
@@ -30,13 +31,13 @@ class Client(slixmpp.ClientXMPP):
         self.status = ""
 
         self.neighbors = neighbors
+        self.neighbors_names_dir = {}
         self.currentNode = currentNode
 
         # routing table
         self.RT = RoutingTable()
         self.RT.addNeighbor(currentNode, 0, currentNode)
 
-        # Obtained from slixmpp examples
         # Obtained from slixmpp examples
         self.register_plugin('xep_0030') # Service Discovery
         self.register_plugin('xep_0004') # Data Forms
@@ -88,6 +89,7 @@ class Client(slixmpp.ClientXMPP):
         # share initial routing table to connected 
         await self.shareRT()
         await self.shareRT_LST()
+        await self.get_Neighbors_list()
 
         asyncio.create_task(self.user_menu())
         # asyncio.create_task(self.messages())
@@ -117,14 +119,13 @@ class Client(slixmpp.ClientXMPP):
         """
 
     async def listen(self, message):
-        await self.get_roster()        
-        if message['type'] in ('chat', 'normal'):
+        await self.get_roster()     
+        if message['type'] in ('chat', 'normal', 'message'):
             try:
                 message_Recieved = json.loads(message["body"])
-                # print(message_Recieved)
 
                 if message_Recieved["headers"]["algorithm"] == "flooding":
-                    0
+                    await self.process_message_flood(message_Recieved)
 
                 if message_Recieved["headers"]["algorithm"] == "Link State Routing":
                     if message_Recieved["type"] == "message":
@@ -363,7 +364,86 @@ class Client(slixmpp.ClientXMPP):
             self.send_message(mto=res[2], 
                           mbody=jsonEnv, 
                           mtype='chat')
+        
+    async def Floodmessage(self, neighbor, message, destiny):
+        await self.get_roster()
+        self.send_message(mto=destiny, mbody=message, mtype='chat')
+        await self.flood(neighbor, message)
+        
+    async def initiate_flood(self):
+        await self.get_roster()
+        message = create_message()
+        if message is not None: 
+            nodeTo = Node(message[0])
+            headers = {
+                "algorithm": "flooding",
+                "from": self.actualNode.name,
+                "to": nodeTo.name,
+                "receivers": []
+            }
             
+            payload = message[1]
+
+            message = {
+                "type": "message",
+                "headers": headers,
+                "payload": payload
+            }
+
+            jsonEnv = json.dumps(message, indent=4)
+            await self.flood(self.actualNode, jsonEnv)
+        
+    async def flood(self, source_node, message):
+        await self.get_roster()
+        message_data = json.loads(message)
+        message_type = message_data["type"]
+        headers = message_data["headers"]
+        
+        if(source_node.name not in headers["receivers"]):
+            headers["receivers"].append(source_node.name)
+        
+            for neighbor in source_node.get_neighbors(): 
+                if(neighbor.name not in headers["receivers"]):
+                    if(neighbor.name != headers["to"]):
+                        headers["receivers"].append(neighbor.name)
+                    messageT = json.dumps(message_data, indent=4)
+                    dest = ""
+                    with open('names-g4.txt', 'r') as file:
+                        jsonNames = json.load(file)
+                        dest = jsonNames["config"][neighbor.name]
+                    await self.Floodmessage(neighbor, messageT, dest)
+        
+    async def get_Neighbors_list(self):
+        await self.get_roster()
+        namesFP = 'names-g4.txt'
+        with open(namesFP, 'r') as file:
+            namesJSON = json.load(file)
+            for n in self.neighbors:
+                self.neighbors_names_dir[n] = namesJSON["config"][n]
+                
+        self.actualNode.add_neighbors(self.neighbors_names_dir)
+                
+    async def process_message_flood(self, message_data):
+        await self.get_roster()
+        message_type = message_data["type"]
+        headers = message_data["headers"]
+
+        if(self.actualNode.name == headers['to']):
+            if(message_type == "info"):
+                print("Mensaje de información recibida:", headers)
+                print()
+            elif(message_type == "message"):
+                print(f"Mensaje entrante de: {headers['from']}")
+                print(message_data["payload"], "\n")
+        else:
+            for neighbor in self.actualNode.get_neighbors():  
+                if(neighbor.name not in headers["receivers"]):
+                    if(neighbor.name != headers["to"]):
+                        headers["receivers"].append(neighbor.name)
+                    message = json.dumps(message_data, indent=4)
+                    print(f"Mensaje reenviado para {headers['to']} de {headers['from']}")
+                    await self.flood(neighbor, message)
+
 
     async def shareRT(self):
         # print("Sharing Routing Table")
@@ -550,7 +630,7 @@ class Client(slixmpp.ClientXMPP):
                 algorithm = choose_algorithm()
                 if (algorithm == 1):
                     print("Flooding")
-                    # TODO
+                    await self.initiate_flood()
 
                 elif (algorithm == 2):
                     print("Link State routing")

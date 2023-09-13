@@ -18,7 +18,7 @@ def get_node():
                 for i, node in enumerate(nodes):
                     print(f"{i+1}) {node}")
                     last = i
-                print(f"{last+2}) CANCELAR")
+                print(f"{last+2}) CANCELAR\n")
 
                 input_ = input("Seleccione el nodo actual: ")
 
@@ -39,9 +39,9 @@ def get_node():
 
 def main_menu():
     while(True):
-        print("\n1) Iniciar sesión")
-        print("\n2) Crear una cuenta")
-        print("\n3) Salir\n")
+        print("1) Iniciar sesión")
+        print("2) Crear una cuenta")
+        print("3) Salir\n")
 
         op = input("No. de opción: ")
 
@@ -57,11 +57,11 @@ def functions():
     stop = False
     while(not stop):
         print("\n__________________________")
-        print("\nIngrese el número de la opción que desea realizar: ")
-        print("\n1) Mostrar todos los contactos y su estado")
-        print("\n2) Enviar un mensaje")
-        print("\n3) Consultar tabla de enrutamiento")
-        print("\n4) SALIR")
+        print("Ingrese el número de la opción que desea realizar: ")
+        print("1) Mostrar todos los contactos y su estado")
+        print("2) Enviar un mensaje")
+        print("3) Consultar tabla de enrutamiento")
+        print("4) SALIR\n")
 
         input_ = input("No. de opción: ")
 
@@ -136,10 +136,25 @@ def message_Info(nodo_actual, nodes_list, rt:RoutingTable):
                 
             return (node, payload, hop)
 
-        
+def create_message():
+    while(True):
+        print("\nIngrese los datos que se le piden a continuación")
+        node = input("Nodo destino: ")
+        payload = input("Mensaje: ")
 
+        if (payload is None) or (node is None):
+            return None
 
+        dest = ""
+        try: 
+            # get direction
+            with open('names-g4.txt', 'r') as file:
+                jsonNames = json.load(file)
+                dest = jsonNames["config"][node]
 
-
-
+        except:
+            print(f"[[Error al leer el archivo]]")
+            print("Pruebe nuevamente")
+            
+        return (node, payload, dest)
 
