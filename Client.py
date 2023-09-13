@@ -387,7 +387,7 @@ class Client(slixmpp.ClientXMPP):
 
             print("cn: ", connectedNeighbors)
 
-            payload = newRT.TABLE
+            payload = self.newRT.TABLE
 
             for n, nDir in connectedNeighbors:
                 headers = {
