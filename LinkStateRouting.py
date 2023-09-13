@@ -18,7 +18,7 @@ import sys
 from queue import PriorityQueue
 
 
-class Node:
+class NodeLSR:
     def __init__(self, name, address):
         self.name = name
         self.address = address
@@ -32,7 +32,7 @@ class Graph:
         self.nodes = {}
 
     def add_node(self, name, address):
-        node = Node(name, address)
+        node = NodeLSR(name, address)
         self.nodes[name] = node
     
     def print_addresses(self):

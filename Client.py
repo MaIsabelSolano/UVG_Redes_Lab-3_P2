@@ -33,6 +33,7 @@ class Client(slixmpp.ClientXMPP):
         self.neighbors = neighbors
         self.neighbors_names_dir = {}
         self.currentNode = currentNode
+        self.actualNode = Node(currentNode)
 
         # routing table
         self.RT = RoutingTable()
