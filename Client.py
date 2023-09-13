@@ -7,7 +7,7 @@ from RT import *
 from LinkStateRouting import *
 
 class Client(slixmpp.ClientXMPP):
-    def __init__(self, jid, password, neighbors, currentNode):
+    def __init__(self, jid, password, neighborslist, currentNode):
         super().__init__(jid, password)
 
         self.name = jid.split('@')[0]
@@ -30,7 +30,7 @@ class Client(slixmpp.ClientXMPP):
                 
         self.status = ""
 
-        self.neighbors = neighbors
+        self.neighbors = neighborslist
         self.neighbors_names_dir = {}
         self.currentNode = currentNode
         self.actualNode = Node(currentNode)
@@ -51,10 +51,6 @@ class Client(slixmpp.ClientXMPP):
         self.add_event_handler('presence', self.presence_handler)
         self.add_event_handler("subscribe", self.handle_subscription)
         self.add_event_handler("message", self.listen)
-
-        # routing table
-        self.RT = RoutingTable()
-        self.RT.addNeighbor(currentNode, 0, currentNode)
 
         #New rt LSR
         self.newRT = RoutingTable()
@@ -89,6 +85,7 @@ class Client(slixmpp.ClientXMPP):
 
         # share initial routing table to connected 
         await self.shareRT()
+        print("se ha compartido")
         await self.shareRT_LST()
         await self.get_Neighbors_list()
 
@@ -158,7 +155,7 @@ class Client(slixmpp.ClientXMPP):
                                                     mbody=jsonEnv, 
                                                     mtype='chat')
                     if message_Recieved["type"] == "info":
-                        # print("info!!!")
+                        print("info!!!")
                         # Got a routing table
                         currentRT = self.RT.TABLE # used to compare later
 
@@ -218,8 +215,8 @@ class Client(slixmpp.ClientXMPP):
                                                     mtype='chat')
 
                     if message_Recieved["type"] == "info":
-                        # print("info!!!")
-                        # Got a routing tabl
+                        print("info!!!")
+                        # Got a routing table
 
                         currentmat = [] # create copy to compare later
                         for n in self.matrix:
@@ -230,6 +227,8 @@ class Client(slixmpp.ClientXMPP):
 
                         from_ = message_Recieved["headers"]["from"]
                         mat = message_Recieved["payload"]
+
+                        print(mat)
 
                         # update whole matrix
                         for x in range(len(mat)):
@@ -447,9 +446,8 @@ class Client(slixmpp.ClientXMPP):
 
 
     async def shareRT(self):
-        # print("Sharing Routing Table")
-        
-        
+        print("Sharing Routing Table")
+
         await self.get_roster()
         
         connectedNeighbors = []
