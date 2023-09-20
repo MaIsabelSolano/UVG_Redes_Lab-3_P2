@@ -154,6 +154,7 @@ class Client(slixmpp.ClientXMPP):
                                     self.send_message(mto=hop_dir, 
                                                     mbody=jsonEnv, 
                                                     mtype='chat')
+                                    
                     if message_Recieved["type"] == "info":
                         print("info!!!")
                         # Got a routing table
@@ -218,17 +219,13 @@ class Client(slixmpp.ClientXMPP):
                         print("info!!!")
                         # Got a routing table
 
-                        currentmat = [] # create copy to compare later
-                        for n in self.matrix:
-                            temp = []
-                            for w in n:
-                                temp.append(w)
-                            currentmat.append(temp)
+                        # Temporal copy
+                        currentmat = [x for x in self.matrix]
 
                         from_ = message_Recieved["headers"]["from"]
                         mat = message_Recieved["payload"]
 
-                        print(mat)
+                        # print(mat)
 
                         # update whole matrix
                         for x in range(len(mat)):
@@ -260,36 +257,12 @@ class Client(slixmpp.ClientXMPP):
                                     self.RT.addNeighbor(self.positionsR[i], weight, from_)
 
 
-                        #update matrix
+                        #update table
                         for n in self.RT.TABLE:
                             self.matrix[self.positions[self.currentNode]][self.positions[n[0]]] = n[1]
 
-
-                        # for i in range(len(rt)):
-                        #     if (self.RT.contains(rt[i][0])):
-                        #         # update si es menor
-                        #         wAcc = self.RT.get_info(rt[i][0])[0]
-                        #         weight = self.RT.get_info(from_)[0] + rt[i][1]
-                        #         # print(f"{weight} < {wAcc}? {self.actual_node}, {rt[i][0]}, {from_} ")
-
-                        #         if weight < wAcc:
-                        #             # Actualizar si es menor
-                        #             self.RT.update_info(rt[i][0], weight, from_)
-                        #             # print("actualiza", rt[i][0], weight, from_)
-
-                        #     else:
-                        #         # agregar
-                        #         weight = self.RT.get_info(from_)[0] + rt[i][1]
-                        #         self.RT.addNeighbor(rt[i][0], weight, from_)
-
-                        # share routing table only if it changed
-                        # print(currentmat)
-                        # print()
-                        # print(self.matrix)
-                        # if currentmat != self.matrix:
-                        #     await self.shareRT()
-
-                        await self.shareRT()
+                        if currentmat != self.matrix or mat != self.matrix:
+                            await self.shareRT()
 
 
             except:
@@ -562,7 +535,7 @@ class Client(slixmpp.ClientXMPP):
     async def shareRT(self):
         # print("Sharing Routing Table")
         await self.get_roster()
-        
+
         connectedNeighbors = []
         try:
             with open('names-g4.txt', 'r') as file:
@@ -649,10 +622,18 @@ class Client(slixmpp.ClientXMPP):
             elif option_2 == 4:
                 # Quit
                 print("Cerrando sesión...")
+
+                await self.delete_contacts()
+
                 self.send_presence(pshow="unavailable", pstatus="unavailable" )
                 # await asyncio.sleep(5)
-                self.disconnect()
+                await self.disconnect()
                 self.is_connected = False
+
+    async def delete_contacts(self):
+        # Deleting contacts
+        for jid in self.client_roster.keys():
+            self.del_roster_item(jid)
 
 
     async def contacts_status(self):
