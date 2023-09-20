@@ -125,7 +125,7 @@ class Client(slixmpp.ClientXMPP):
                 if message_Recieved["headers"]["algorithm"] == "flooding":
                     await self.process_message_flood(message_Recieved)
 
-                if message_Recieved["headers"]["algorithm"] == "Link State Routing":
+                if message_Recieved["headers"]["algorithm"] == "LS":
                     if message_Recieved["type"] == "message":
                         if message_Recieved["headers"]["to"] == self.currentNode:
                             # The message has reached it's intended node
@@ -155,7 +155,7 @@ class Client(slixmpp.ClientXMPP):
                                                     mbody=jsonEnv, 
                                                     mtype='chat')
                                     
-                    if message_Recieved["type"] == "info":
+                    if message_Recieved["type"] == "message":
                         print("info!!!")
                         # Got a routing table
                         currentRT = self.RT.TABLE # used to compare later
@@ -266,7 +266,7 @@ class Client(slixmpp.ClientXMPP):
 
 
             except:
-                print("[[Se produjo un error]]")
+                pass
 
     async def add_Neighbors(self):
         namesFP = 'names-g4.txt'
@@ -320,7 +320,7 @@ class Client(slixmpp.ClientXMPP):
                 "from": self.currentNode,
                 "to": res[0], 
                 "hop": " ",
-                "algorithm": "Link State Routing"
+                "algorithm": "LS"
             }
 
             message = {
@@ -510,11 +510,11 @@ class Client(slixmpp.ClientXMPP):
                 headers = {
                     "from": self.currentNode,
                     "to": n, 
-                    "algorithm": "Link State Routing"                    
+                    "algorithm": "LS"                    
                 }
 
                 message = {
-                    "type": "info",
+                    "type": "message",
                     "headers": headers,
                     "payload": payload
                 }
